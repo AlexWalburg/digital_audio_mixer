@@ -1,0 +1,12 @@
+[options]
+mode cover
+
+[engines]
+smtbmc boolector
+
+[script]
+read -formal i2sin.sv
+prep -top i2sin
+
+[files]
+i2sin.sv

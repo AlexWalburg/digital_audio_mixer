@@ -1,0 +1,12 @@
+[options]
+mode cover
+
+[engines]
+smtbmc boolector
+
+[script]
+read -formal i2sinsinglechannel.sv
+prep -top i2sinsinglechannel
+
+[files]
+i2sinsinglechannel.sv

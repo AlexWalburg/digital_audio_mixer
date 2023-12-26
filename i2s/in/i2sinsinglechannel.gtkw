@@ -1,0 +1,29 @@
+[*]
+[*] GTKWave Analyzer v3.3.117 (w)1999-2023 BSI
+[*] Mon Dec 25 08:36:34 2023
+[*]
+[dumpfile] "/home/walburg/Projects/fpga/digital_audio_amp/i2sinsinglechannel.vcd"
+[dumpfile_mtime] "Mon Dec 25 08:34:53 2023"
+[dumpfile_size] 1990
+[savefile] "/home/walburg/Projects/fpga/digital_audio_amp/i2sinsinglechannel.gtkw"
+[timestart] 0
+[size] 1000 546
+[pos] -1 -1
+*-3.919996 24 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] i2sinsinglechannel_tb.
+[sst_width] 273
+[signals_width] 166
+[sst_expanded] 1
+[sst_vpaned_height] 138
+@28
+i2sinsinglechannel_tb.in.sck
+i2sinsinglechannel_tb.in.rst
+i2sinsinglechannel_tb.in.sd
+@22
+i2sinsinglechannel_tb.in.data_in[5:0]
+@29
+i2sinsinglechannel_tb.in.data_en
+@22
+i2sinsinglechannel_tb.in.frame_status[6:0]
+[pattern_trace] 1
+[pattern_trace] 0

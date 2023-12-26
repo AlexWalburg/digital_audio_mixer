@@ -1,0 +1,26 @@
+[tasks]
+basic bmc
+fv prove
+cover
+basic cover : default
+
+[options]
+cover:
+mode cover
+--
+prove:
+mode prove
+--
+bmc: 
+mode bmc
+--
+
+[engines]
+smtbmc boolector
+
+[script]
+read -formal i2sinsinglechannel.sv
+prep -top i2sinsinglechannel
+
+[files]
+i2sinsinglechannel.sv
