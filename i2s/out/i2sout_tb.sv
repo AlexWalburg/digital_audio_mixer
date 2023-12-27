@@ -9,6 +9,11 @@ module i2out_tb #(parameter BITS_PRECISION=24)();
    wire	       sd;
    
    integer	i;
+
+   wire		in_data_en;
+   wire		left_rightn;
+   wire [MSB:0]	in_data;
+   
    
    
    always #1 clk = ~clk;
@@ -27,15 +32,15 @@ module i2out_tb #(parameter BITS_PRECISION=24)();
    initial begin
       $dumpfile("i2sout.vcd");
       $dumpvars(0,out);
+      $dumpvars(0,in);
+      
       
       rst <= 1;
-      #4;
-      rst <= 0;
-      #2;
       write_bitstring(1,2);
-      #94;
+      #5;
+      rst <= 0;
       write_bitstring(1<<MSB,1<<MSB);
-      #96;
+      #220;
       
       $finish();
       
@@ -51,7 +56,16 @@ module i2out_tb #(parameter BITS_PRECISION=24)();
       .ws(ws),
       .sd(sd)
       );
+
+   i2sin #(.BITS_PRECISION(BITS_PRECISION)) in
+     (.sck(clk),
+      .rst(rst),
+      .ws(ws),
+      .sd(sd),
+      .data_in(in_data),
+      .data_en(in_data_en),
+      .left_rightn(left_rightn));
    
    
-endmodule; // i2out_tb
+endmodule // i2out_tb
 

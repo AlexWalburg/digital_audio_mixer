@@ -42,6 +42,8 @@ module i2sinsinglechannel
 	     data_out[i] <= sd;   
       end
    endgenerate
+
+   `ifdef FV
    reg has_reset = 0;
    reg enable_up = 1;
    
@@ -52,7 +54,6 @@ module i2sinsinglechannel
    always @(posedge sck) begin
       if(~rst && ~enable)
 	enable_up <= 0;
-      
    end
    always @(posedge sck) begin
 	 
@@ -65,8 +66,8 @@ module i2sinsinglechannel
 	 enable_timeout_change: assert(!(enableup && $past(enable,BITS_PRECISION)==1)||(data_en==1));
 	 
       end
-      
-   end
+   end // always @ (posedge sck)
+   `endif //  `ifdef FV
    
    
 endmodule // i2sin

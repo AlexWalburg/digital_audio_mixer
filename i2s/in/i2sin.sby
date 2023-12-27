@@ -20,7 +20,9 @@ smtbmc boolector
 
 [script]
 read -formal i2sin.sv
-prep -top i2sin
+read -formal i2sin_fv.sv
+prep -top i2sin_fv_top
 
 [files]
 i2sin.sv
+i2sin_fv.sv

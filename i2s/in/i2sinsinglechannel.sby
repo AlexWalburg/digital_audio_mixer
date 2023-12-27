@@ -19,6 +19,7 @@ mode bmc
 smtbmc boolector
 
 [script]
+read -define FV=1
 read -formal i2sinsinglechannel.sv
 prep -top i2sinsinglechannel
 

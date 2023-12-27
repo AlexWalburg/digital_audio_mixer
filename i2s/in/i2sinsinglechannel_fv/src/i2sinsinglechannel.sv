@@ -1,5 +1,5 @@
 module i2sinsinglechannel
-  #(parameter BITS_PRECISION=24)
+  #(parameter BITS_PRECISION=10)
    (
     input	   sck,
     input	   rst,
@@ -43,12 +43,31 @@ module i2sinsinglechannel
       end
    endgenerate
 
-
+   `ifdef FV
+   reg has_reset = 0;
+   reg enable_up = 1;
+   
    always @(posedge sck) begin
-      if(~rst) begin
-	 timeout_hi: assert ($past(enable,24) && data_en);
-      end
+      if(rst)
+	has_reset <= 1;
    end
+   always @(posedge sck) begin
+      if(~rst && ~enable)
+	enable_up <= 0;
+   end
+   always @(posedge sck) begin
+	 
+      if(has_reset && ~$past(rst)) begin
+	 assume(rst==0);
+	 senddata: cover((data_en==1) && (data_out == 55));
+	 premature_interrupt: cover(($past(frame_status)!=1 && data_en==1));
+	 
+	 enable_change: assert (!($past(enable)&&~enable)||(data_en==1));
+	 enable_timeout_change: assert(!(enableup && $past(enable,BITS_PRECISION)==1)||(data_en==1));
+	 
+      end
+   end // always @ (posedge sck)
+   `endif //  `ifdef FV
    
    
 endmodule // i2sin

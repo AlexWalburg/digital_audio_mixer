@@ -12,12 +12,13 @@ module i2sin_tb #(parameter BITS_PRECISION=24)();
    
    always #1 clk = ~clk;
 
-   task write_bitstring(input [MSB:0] LBITS, input [MSB:0] RBITS);
+   task write_bitstring(input [MSB:0] LBITS, input [MSB:0] RBITS,input out_of_reset);
       begin
 	 ws <= 0;
+	 if(!out_of_reset) #2;
 	 for (i = MSB; i >= 0; i = i - 1) begin
-	    #2;
 	    sd <= LBITS[i];
+	    #2;
 	 end
 	 ws <= 1;
 	 for (i = MSB; i >= 0; i = i - 1) begin
@@ -33,10 +34,10 @@ module i2sin_tb #(parameter BITS_PRECISION=24)();
       $dumpvars(0,in);
       
       rst <= 1;
+      ws <= 0;
       #4;
       rst <= 0;
-      #2;
-      write_bitstring(1,2);
+      write_bitstring(1,2 | (1 << MSB),1);
       #10;
       
       $finish();
@@ -53,6 +54,4 @@ module i2sin_tb #(parameter BITS_PRECISION=24)();
       .left_rightn(left_rightn),
       .data_en(data_en)
       );
-   
-   
-endmodule; // i2sin_tb
+endmodule // i2sin_tb

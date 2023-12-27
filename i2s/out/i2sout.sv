@@ -17,23 +17,30 @@ module i2sout
    reg [MSB:0] l_data_cpy;
    reg [MSB:0] r_data_cpy;
    wire [MSB:0]	current_data;
-   reg [MSB:0] frame_state;
+   reg [BITS_PRECISION:0] frame_state;
    reg [1:0]   state;
-   assign data_entered = frame_state[MSB] && (state == WRITE_L);
+   reg	       sd_int;
+   assign data_entered = frame_state[BITS_PRECISION] && (state == WRITE_L);
 
    wire	       should_read_next = frame_state[0];
    assign ws = state[1];
    assign current_data = state[1] ? r_data_cpy : l_data_cpy;
-   assign sd = |(frame_state & current_data);
+   assign sd = sd_int;
+   always@(posedge sck or posedge rst) begin
+      if(rst)
+	sd_int <= 0;
+      else
+	sd_int <= |((frame_state >> 1) & current_data);
+   end
 
    task do_reset();
       begin
-	 l_data_cpy <= 0;
-	 r_data_cpy <= 0;
-	 state <= IDLE;
-	 frame_state <= 1;
+	 l_data_cpy <= data_en == 1 ? l_data : 0;
+	 r_data_cpy <= data_en == 1 ? r_data : 0;
+	 state <= data_en ==1 ? WRITE_L : IDLE;
+	 frame_state <= 1 << BITS_PRECISION;
       end
-   endtask; // do_reset
+   endtask // do_reset
 
    task do_idle();
       begin
@@ -42,18 +49,18 @@ module i2sout
 	    r_data_cpy <= r_data;
 	    state <= WRITE_L;
 	 end 
-	 frame_state <= 1 << MSB;
+	 frame_state <= 1 << BITS_PRECISION;
       end
-   endtask; // do_idle
+   endtask // do_idle
 
    task do_left();
       begin
 	 if(should_read_next) begin
 	    state <= WRITE_R;
 	 end
-	 frame_state <= {frame_state[0],frame_state[MSB:1]};
+	 frame_state <= {frame_state[0],frame_state[BITS_PRECISION:1]};
       end
-   endtask; // do_left
+   endtask // do_left
 
    task do_right();
       if(should_read_next) begin
@@ -67,11 +74,11 @@ module i2sout
 	    
 	 end
       end else
-	frame_state <= {frame_state[0],frame_state[MSB:1]};
-   endtask; // do_right
+	frame_state <= {frame_state[0],frame_state[BITS_PRECISION:1]};
+   endtask // do_right
    
    
-   always @(negedge sck or posedge rst) begin
+   always @(posedge sck or posedge rst) begin
       if(rst)
 	do_reset();
       else begin
@@ -82,7 +89,7 @@ module i2sout
 	 endcase; // case (state)
       end
    end
-endmodule; // i2sout
+endmodule // i2sout
 
    
  
