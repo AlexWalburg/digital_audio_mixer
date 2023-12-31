@@ -30,6 +30,8 @@ module i2sin
 	 reading <= 1;
 	 frame_status <= 1 << MSB;
 	 last_ws <= ws;
+	 data_en <= 0;
+	 
       end
    endtask // do_reset
    

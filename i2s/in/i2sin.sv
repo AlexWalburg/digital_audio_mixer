@@ -8,7 +8,7 @@ module i2sin
     // from perspective of higher level system, this module's data out is data in, so we call it data in
     output [MSB:0] data_in,
     output	   left_rightn, 
-    output reg	   data_en
+    output	   data_en
     );
    localparam MSB = BITS_PRECISION - 1;
    
@@ -18,9 +18,11 @@ module i2sin
 
    reg [MSB:0]	   frame_status;
    reg		   last_ws;
+   reg		   last_ws_valid; // formal verification revealed we need to not track last_ws during reset
 
-   wire		   ws_transition = last_ws != ws;
-   wire		   last_bit = frame_status[0] || ws_transition;
+   wire		   ws_transition = last_ws != ws && last_ws_valid;
+   wire		   last_bit = (frame_status[0] || ws_transition) && reading;
+   assign data_en = last_bit;
    assign left_rightn = last_ws;
    assign data_in = data;
    
@@ -29,9 +31,8 @@ module i2sin
       begin
 	 reading <= 1;
 	 frame_status <= 1 << MSB;
-	 last_ws <= ws;
-	 data_en <= 0;
-	 
+	 last_ws <= 0;
+	 last_ws_valid <= 0;
       end
    endtask // do_reset
    
@@ -39,15 +40,13 @@ module i2sin
       begin
 	 frame_status <= 1 << MSB;
 	 reading <= ws_transition;
-	 data_en <= 0;
       end
    endtask // do_idle
 
    task do_read(); // does state management for reads
       begin
-	 frame_status <= {1'b0,frame_status[MSB:1]};
-	 data_en <= last_bit;
-	 reading <= ~last_bit;
+	 frame_status <= last_bit ? 1 << MSB : {1'b0,frame_status[MSB:1]};
+	 reading <= ~last_bit || ws_transition; // verification revealed you can't go idle if a ws transition just happened!
       end
    endtask // do_read
    
@@ -56,6 +55,7 @@ module i2sin
 	do_reset();
       else begin
 	 last_ws <= ws;
+	 last_ws_valid <= 1;
 	 if (reading)
 	   do_read();
 	 else
