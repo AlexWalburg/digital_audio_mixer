@@ -1,7 +1,8 @@
 module i2sin
   #(parameter BITS_PRECISION=24)
    (
-    input	   sck,
+    input	   clk, 
+    input	   sck_negedge, // note that this is not actually sck, but a pulse to indicate sck has gone to its negedge and we should read
     input	   rst,
     input	   ws,
     input	   sd,
@@ -50,10 +51,10 @@ module i2sin
       end
    endtask // do_read
    
-   always@(negedge sck or posedge rst) begin
+   always@(posedge clk) begin
       if(rst)
 	do_reset();
-      else begin
+      else if(sck_negedge) begin
 	 last_ws <= ws;
 	 last_ws_valid <= 1;
 	 if (reading)
@@ -66,13 +67,15 @@ module i2sin
    
    generate
       for (i = 0; i < MSB + 1; i = i + 1) begin
-	 always @(negedge sck or posedge rst)
+	 always @(posedge clk)
 	   if(rst)
 	     data[i] <= 0;
-	   else if(i != MSB && frame_status[MSB]) //do reset if we have restarted reading, which would drive frame_status[MSB] high
-	     data[i] <= 0;
-	   else if (frame_status[i])
-	     data[i] <= sd;
+	   else if(sck_negedge) begin
+	      if(i != MSB && frame_status[MSB]) //do reset if we have restarted reading, which would drive frame_status[MSB] high
+		data[i] <= 0;
+	      else if (frame_status[i])
+		data[i] <= sd;
+	   end
       end
    endgenerate
 
