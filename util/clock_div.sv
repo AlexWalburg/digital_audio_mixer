@@ -9,7 +9,7 @@ module clock_div
    localparam MSB = log2clkdiv - 1;
    reg [MSB:0] count_div;
    assign div_clk = count_div[MSB];
-   wire	       some_transition = &(~count_div[MSB-1:0]); // all zeros
+   wire	       some_transition = MSB >= 1 ? &(~count_div[MSB-1:0]) : 1; // all zeros
    assign rising_edge = count_div[MSB] & some_transition;
    assign falling_edge = ~count_div[MSB] & some_transition;
 

@@ -1,10 +1,10 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Company: Walburg Industries
+// Engineer: Alex Walburg
 // 
 // Create Date: 12/26/2023 07:07:42 PM
-// Design Name: 
+// Design Name: Digital_audio_amp
 // Module Name: bent_pipe
 // Project Name: 
 // Target Devices: 
@@ -20,17 +20,17 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module bent_pipe(
+module bent_pipe #(parameter MAX_DEV=1) (
     input clk,
     input rstn,
-    output tx_mclk, // JA[0]
-    output tx_lrck, // JA[1]
-    output tx_sclk, // JA[2]
-    output tx_sdout, // JA[3]
-    output rx_mclk, // JA[4]
-    output rx_lrck, // JA[5]
-    output rx_sclk, // JA[6]
-    input  rx_sdin // JA[7]
+    output [MAX_DEV:0] tx_mclk, // JX[0]
+    output [MAX_DEV:0] tx_lrck, // JX[1]
+    output [MAX_DEV:0] tx_sclk, // JX[2]
+    output [MAX_DEV:0] tx_sdout, // JX[3]
+    output [MAX_DEV:0] rx_mclk, // JX[4]
+    output [MAX_DEV:0] rx_lrck, // JX[5]
+    output [MAX_DEV:0] rx_sclk, // JX[6]
+    input  [MAX_DEV:0] rx_sdin // JX[7]
     );
     wire rst;
     xpm_cdc_array_single #(
@@ -77,59 +77,73 @@ module bent_pipe(
     
     wire mclk;
     clk_wiz_0 clk_div(.clk_in1(clk),.reset(sysclkrst),.mclk(mclk));
-    assign tx_mclk = mclk;
-    assign rx_mclk = mclk;
+    generate for(genvar i = 0; i < MAX_DEV + 1; i = i + 1) begin : mclks
+        assign tx_mclk[i] = mclk;
+        assign rx_mclk[i] = mclk;
+        end
+    endgenerate
     
+    reg [23:0] l_data[MAX_DEV:0];
+    reg [23:0] r_data[MAX_DEV:0];
     
+    wire [24:0] l_data_summed;
+    wire [24:0] r_data_summed;
+    assign l_data_summed = {l_data[0][23],l_data[0]} + {l_data[1][23],l_data[1]};
+    assign r_data_summed = {r_data[0][23],r_data[0]} + {r_data[1][23],r_data[1]};
+    wire  ws [MAX_DEV:0];
     
-    wire ws;
-    assign tx_lrck = ws;
-    assign rx_lrck = ws;
+    wire [23:0] l_data_out;
+    wire [23:0] r_data_out;
+    assign l_data_out = l_data_summed[24:1];
+    assign r_data_out = r_data_summed[24:1];
     
-    reg [23:0] l_data;
-    reg [23:0] r_data; 
-    
+    wire left_rightn [MAX_DEV:0];
+    wire data_en [MAX_DEV:0];
+    wire [23:0] data_in [MAX_DEV:0];
+
     wire sclk;
     wire sclk_posedge;
     wire sclk_negedge;
-    clock_div #(.log2clkdiv(3)) sck_div
+    clock_div #(.log2clkdiv(1)) sck_div
         (
         .clk(mclk),
         .rst(rst),
         .div_clk(sclk),
         .rising_edge(sclk_posedge),
         .falling_edge(sclk_negedge)
-        );
-    assign rx_sclk = sclk;
-    assign tx_sclk = sclk;
+    );
+    generate
+        for(genvar i = 0; i < MAX_DEV + 1; i = i + 1) begin : pmodi2s2s
+
+            assign tx_lrck[i] = ws[i];
+            assign rx_lrck[i] = ws[i];
+
+
+            assign rx_sclk[i] = sclk;
+            assign tx_sclk[i] = sclk;
+
+            
+            i2sin in(
+                .clk(mclk),
+                .sck_negedge(sclk_negedge),
+                .rst(rst),
+                .ws(ws[i]),
+                .sd(rx_sdin[i]),
+                .data_in(data_in[i]),
+                .left_rightn(left_rightn[i]),
+                .data_en(data_en[i]));
     
+            i2sout out(
+                .clk(mclk),
+                .sck_posedge(sclk_posedge),
+                .l_data(l_data_out),
+                .r_data(r_data_out),
+                .rst(rst),
+                .ws(ws[i]),
+                .sd(tx_sdout[i]),
+                .data_en(1));
     
-    wire left_rightn;
-    wire data_en;
-    wire [23:0] data_in;
-    
-    i2sin in(
-        .clk(mclk),
-        .sck_negedge(sclk_negedge),
-        .rst(rst),
-        .ws(ws),
-        .sd(rx_sdin),
-        .data_in(data_in),
-        .left_rightn(left_rightn),
-        .data_en(data_en));
-    
-    i2sout out(
-        .clk(mclk),
-        .sck_posedge(sclk_posedge),
-        .l_data(l_data),
-        .r_data(r_data),
-        .rst(rst),
-        .ws(ws),
-        .sd(tx_sdout),
-        .data_en(1));
-    
-    
-    
+    /*
     ila_0 lgr (
         .clk(clk),
         .probe0(sclk),
@@ -139,20 +153,23 @@ module bent_pipe(
         .probe4(mclk),
         .probe5(rst)
     );
+    */
     
  
-   always @(posedge mclk) begin
-        if(rst) begin
-            l_data <= 24'h012345;
-            r_data <= 24'h89ABCD;
-        end
-        else begin
-            if(data_en) 
-                case (left_rightn)
-                    1: l_data <= data_in;
-                    0: r_data <= data_in; 
+        always @(posedge mclk) begin
+            if(rst) begin
+                l_data[i] <= 0;
+                r_data[i] <= 0;
+            end
+            else begin
+            if(data_en[i]) 
+                case (left_rightn[i])
+                    1: l_data[i] <= data_in[i];
+                    0: r_data[i] <= data_in[i]; 
                 endcase
-        end
-   end
+            end
+         end
+     end
+     endgenerate
     
 endmodule
