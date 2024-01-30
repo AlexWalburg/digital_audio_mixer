@@ -1,0 +1,3 @@
+[submodule "control_system_coprocessor"]
+	path = control_system_coprocessor
+	url = git@github.com:AlexWalburg/control_system_coprocessor.git
